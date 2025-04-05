@@ -3,9 +3,13 @@
 #include "core/scene.hpp"
 #include "core/scene_object.hpp"
 #include "objects/camera.hpp"
+#include "objects/fluid.hpp"
 #include "objects/mesh.hpp"
 #include <memory>
-#include <winscard.h>
+// #include <winscard.h>
+//
+#undef min
+#undef max
 
 int width, height;
 
@@ -92,7 +96,7 @@ int main(int argc, char **argv) {
 	//
 	engine::Renderer renderer = engine::Renderer(width, height);
 	engine::Scene *scene = new engine::Scene();
-	scene->SetSunPosition({20, 10, 20});
+	scene->SetSunPosition({30, 20, 30});
 
 	// renderer setup
 	GLSLProgram prog;
@@ -115,6 +119,8 @@ int main(int argc, char **argv) {
 		LOAD_MESH_OR_EXIT(mesh, "assets/models/teapot.obj");
 		engine::MeshObject *meshObject = new engine::MeshObject(mesh);
 		meshObject->SetMeshColor({.4, 0.02, 0.02});
+		meshObject->SetPosition({-40, 0, 0});
+		meshObject->SetMeshSize({0.3, 0.3, 0.3});
 		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
 		Quatf rot = FromAxisAngle({1, 0, 0}, deg2rad(-90));
 		meshObject->SetRotation(rot);
@@ -132,22 +138,35 @@ int main(int argc, char **argv) {
 	// PLANE
 	{
 		const std::vector<Vertex> PLANE_VERTICES = {
-			{{-10.0, 0.0, -10.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}},
-			{{10.0, 0.0, -10.0}, {0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}},
-			{{10.0, 0.0, 10.0}, {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}},
-			{{-10.0, 0.0, 10.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0}}};
+			{{-1.0, 0.0, -1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}},
+			{{1.0, 0.0, -1.0}, {0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}},
+			{{1.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}},
+			{{-1.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0}}};
 		const std::vector<unsigned int> PLANE_INDICES = {0, 1, 2, 2, 3, 0};
 		engine::MeshObject *meshObject =
 			new engine::MeshObject(PLANE_VERTICES, PLANE_INDICES);
-		meshObject->SetPosition({0, -10, 0});
-		meshObject->SetMeshSize({5, 5, 5});
+		meshObject->SetPosition({0, -4.8, 0});
+		meshObject->SetMeshSize({15, 15, 15});
 		meshObject->SetMeshColor({.2, .2, .2});
 		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
 	}
+	// WATER
+	{
+		engine::FluidObject *object = new engine::FluidObject();
+		object->fromFile("assets/caches/liquid.abc");
+		object->SetPosition({0, -10, 0});
+		object->SetSize({10, 10, 10});
+		scene->AddObject(std::unique_ptr<engine::SceneObject>(object));
+	}
 
-	renderer.BindProgram("default");
+	//
 
+	double lastTimeFrame = glfwGetTime();
 	while (!glfwWindowShouldClose(window)) {
+		double currentTimeFrame = glfwGetTime();
+		double dt = currentTimeFrame - lastTimeFrame;
+		lastTimeFrame = currentTimeFrame;
+
 		renderer.BeginFrame();
 
 		if (isMouse1Pressed)
@@ -162,11 +181,10 @@ int main(int argc, char **argv) {
 					  radius * cos(phi) * cos(theta)};
 		camera->SetPosition(cameraPos);
 
-		scene->Update(0.0);
+		scene->Update(dt);
 		scene->Render(renderer);
 
 		renderer.EndFrame(window);
-
 		glfwPollEvents();
 	}
 

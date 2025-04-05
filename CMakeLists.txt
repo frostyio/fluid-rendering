@@ -51,13 +51,18 @@ add_custom_command(
 set(CYCODEBASE_DIR ${LIB_DIR}/cyCodeBase)
 target_include_directories(${PROJECT_NAME} PUBLIC ${CYCODEBASE_DIR})
 
-# copy assets
-file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
 
 # lodepng
 set(LODEPNG_DIR ${LIB_DIR}/lodepng)
 target_include_directories(${PROJECT_NAME} PRIVATE ${LODEPNG_DIR})
 target_sources(${PROJECT_NAME} PRIVATE ${LODEPNG_DIR}/lodepng.cpp)
+
+# alembic
+find_package(Alembic REQUIRED)
+find_package(Imath REQUIRED)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${ALEMBIC_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE Alembic::Alembic Imath::Imath)
 
 # copy assets
 file(COPY ${CMAKE_SOURCE_DIR}/assets DESTINATION ${CMAKE_BINARY_DIR})
