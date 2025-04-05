@@ -11,6 +11,7 @@ namespace engine {
 enum ShadingType {
 	None = 0,
 	BlinnPhong = 1,
+	SolidAmbient = 2,
 };
 
 class Renderer {

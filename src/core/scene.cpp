@@ -25,11 +25,6 @@ void Scene::Update(float deltaTime) {
 }
 
 void Scene::Render(Renderer &renderer) {
-	// Matrix4f viewMatrix = activeCamera_->GetViewMatrix();
-	// Matrix4f projectionMatrix = activeCamera_->GetProjectionMatrix();
-	// Renderer *renderer =
-	// 	GetRendererInstance(); // Replace with your actual renderer access
-
 	renderer.BindProgram("default");
 
 	engine::CameraObject *camera = GetActiveCamera();

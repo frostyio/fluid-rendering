@@ -28,6 +28,7 @@ vec3 blinnPhongShading(vec3 norm, vec3 pos, vec3 light, vec3 view, vec3 specular
 Shading Enum:
 	0 - None
 	1 - BlinnPhong
+	2 - Solid ambient
 */
 uniform int shading = 1;
 
@@ -45,6 +46,8 @@ void main()
 
     if (shading == 1) {
         finalColor += vec4(blinnPhongShading(fragNorm, fragPos, lightPos, viewPos, specularColor, shininess, ambientColor, diffuseColor), 0.0);
+    } else if (shading == 2) {
+        finalColor += vec4(ambientColor, 0.0);
     }
 
     color = finalColor;
