@@ -18,6 +18,12 @@ class Component {
 	SceneObject *owner_;
 };
 
+class IUpdatable {
+  public:
+	virtual void Update(double deltaTime) = 0;
+	virtual ~IUpdatable() = default;
+};
+
 } // namespace engine
 
 #endif

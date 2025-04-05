@@ -62,9 +62,15 @@ class SceneObject {
 	inline Quatf GetRotation() const { return rotation; }
 	inline Vec3f GetSize() const { return size; }
 
-	virtual void Update(float deltaTime) {
+	virtual void Update(double deltaTime) {
 		for (RendererComponent *renderComp : renderComponents) {
 			renderComp->Update();
+		}
+
+		for (Component *comp : components) {
+			if (auto *updatable = dynamic_cast<IUpdatable *>(comp)) {
+				updatable->Update(deltaTime);
+			}
 		}
 	}
 
