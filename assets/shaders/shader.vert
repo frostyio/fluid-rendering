@@ -22,7 +22,8 @@ void main()
     fragNorm = normalMatrix * norm;
 
     // to screen space
-    gl_Position = projection * view * vec4(fragPos, 1.0);
+    vec4 viewPos = view * vec4(fragPos, 1.0);
+    gl_Position = projection * viewPos;
     gl_Position.y = -gl_Position.y;
 
     // passing along

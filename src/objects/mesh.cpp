@@ -18,9 +18,9 @@ MeshObject::MeshObject(const std::vector<Vertex> &vertices,
 	AddComponent(mesh.get());
 }
 
-void MeshObject::Render(Renderer &renderer) {
+void MeshObject::Render(Renderer &renderer, Scene *scene) {
 	renderer.SetUniform("ambientColor", color);
 	renderer.SetUniform("diffuseColor", color);
 	renderer.SetUniform("shininess", shininess);
-	SceneObject::Render(renderer);
+	SceneObject::Render(renderer, scene);
 }

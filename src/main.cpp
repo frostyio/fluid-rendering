@@ -5,15 +5,12 @@
 #include "objects/camera.hpp"
 #include "objects/fluid.hpp"
 #include "objects/mesh.hpp"
+#include "objects/skybox.hpp"
 #include <memory>
-// #include <winscard.h>
-//
 #undef min
 #undef max
 
 int width, height;
-
-//
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 						int mods) {
@@ -25,7 +22,7 @@ static cy::Vec2<double> mouseChange(0.0, 0.0);
 static cy::Vec2<double> lastMousePos(0.0, 0.0);
 static bool isMouse1Pressed = false;
 static bool isMouse2Pressed = false;
-static cy::Vec2<double> accumulatedDrag(0., 0.);
+static cy::Vec2<double> accumulatedDrag(30., 20.);
 static double accumulatedZoom = 45.;
 
 static void mouseCallback(GLFWwindow *window, int button, int action,
@@ -105,6 +102,12 @@ int main(int argc, char **argv) {
 	renderer.CreateProgram("default", &prog);
 	renderer.GetProgram("default");
 
+	// composite shader
+	GLSLProgram compositeProg;
+	compositeProg.BuildFiles("assets/shaders/quad.vert",
+							 "assets/shaders/composite.frag");
+	renderer.CreateProgram("_composite", &compositeProg);
+
 	// camera
 	engine::CameraObject *camera = new engine::CameraObject({0, 0, 0});
 	scene->AddObject(std::unique_ptr<engine::SceneObject>(camera));
@@ -145,21 +148,62 @@ int main(int argc, char **argv) {
 		const std::vector<unsigned int> PLANE_INDICES = {0, 1, 2, 2, 3, 0};
 		engine::MeshObject *meshObject =
 			new engine::MeshObject(PLANE_VERTICES, PLANE_INDICES);
-		meshObject->SetPosition({0, -4.8, 0});
-		meshObject->SetMeshSize({15, 15, 15});
+		meshObject->SetPosition({0, -22, 0});
+		meshObject->SetMeshSize({200, 1, 200});
 		meshObject->SetMeshColor({.2, .2, .2});
 		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
+		// meshObject->SetTextures("assets/textures/stone_tile");
+		meshObject->SetTextures("assets/textures/brick");
 	}
 	// WATER
+	GLSLProgram waterDepthProgram;
+	waterDepthProgram.BuildFiles("assets/shaders/depth_pass.vert",
+								 "assets/shaders/depth_pass.frag");
+	renderer.CreateProgram("waterDepth", &waterDepthProgram);
+	GLSLProgram narrowFilterProgram;
+	narrowFilterProgram.BuildFiles("assets/shaders/quad.vert",
+								   "assets/shaders/narrow_filter.frag");
+	renderer.CreateProgram("narrowFilter", &narrowFilterProgram);
+	GLSLProgram debugDisplayProgram;
+	debugDisplayProgram.BuildFiles("assets/shaders/quad.vert",
+								   "assets/shaders/debug_display.frag");
+	renderer.CreateProgram("debugDisplay", &debugDisplayProgram);
+	GLSLProgram normalReconstructionProgram;
+	normalReconstructionProgram.BuildFiles(
+		"assets/shaders/quad.vert",
+		"assets/shaders/normal_reconstruction.frag");
+	renderer.CreateProgram("normalReconstruction",
+						   &normalReconstructionProgram);
+	GLSLProgram fluidProgram;
+	fluidProgram.BuildFiles("assets/shaders/quad.vert",
+							"assets/shaders/shading.frag");
+	renderer.CreateProgram("fluidProgram", &fluidProgram);
+	GLSLProgram thicknessProgram;
+	thicknessProgram.BuildFiles("assets/shaders/depth_pass.vert",
+								"assets/shaders/thickness.frag");
+	renderer.CreateProgram("thicknessMap", &thicknessProgram);
 	{
+
 		engine::FluidObject *object = new engine::FluidObject();
-		object->fromFile("assets/caches/liquid.abc");
-		object->SetPosition({0, -10, 0});
-		object->SetSize({10, 10, 10});
+		if (argc > 1)
+			object->fromFile(argv[1]);
+		else
+			object->fromFile("assets/caches/constantFlow4.abc");
+		object->SetPosition({0, -30, 0});
+		// object->SetSize({10, 10, 10});
+		object->SetSize({20, 20, 20});
 		scene->AddObject(std::unique_ptr<engine::SceneObject>(object));
 	}
 
+	{
+		engine::SkyboxObject *object = new engine::SkyboxObject();
+		scene->AddObject(std::unique_ptr<engine::SceneObject>(object));
+		scene->SetActiveSkybox(object);
+	}
+
 	//
+
+	glEnable(GL_PROGRAM_POINT_SIZE);
 
 	double lastTimeFrame = glfwGetTime();
 	while (!glfwWindowShouldClose(window)) {
@@ -172,10 +216,10 @@ int main(int argc, char **argv) {
 		if (isMouse1Pressed)
 			accumulatedDrag += getMouseDelta(window) * 0.3;
 		if (isMouse2Pressed)
-			accumulatedZoom += getMouseDelta(window).y * 0.05;
+			accumulatedZoom += getMouseDelta(window).y * 0.2;
 		float theta = deg2rad(accumulatedDrag.x);
 		float phi = deg2rad(accumulatedDrag.y);
-		float radius = accumulatedZoom;
+		float radius = accumulatedZoom + 30;
 		cy::Vec3f cameraPos =
 			cy::Vec3f{radius * cos(phi) * sin(theta), radius * sin(phi),
 					  radius * cos(phi) * cos(theta)};

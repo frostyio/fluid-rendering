@@ -4,12 +4,20 @@
 #include "common/typedefs.hpp"
 #include "components/renderer.hpp"
 #include "core/renderer.hpp"
+// #include "core/scene.hpp"
 #include <vector>
 
 using namespace engine;
 
 namespace engine {
 
+enum RenderingOrder {
+	Opaque = 0,
+	Transparent,
+	Post,
+};
+
+class Scene;
 class Component;
 
 class SceneObject {
@@ -17,6 +25,8 @@ class SceneObject {
 	Vec3f position = Vec3f{};
 	Quatf rotation = Quatf{1, 0, 0, 0};
 	Vec3f size = Vec3f{1, 1, 1};
+
+	RenderingOrder renderingOrder = RenderingOrder::Opaque;
 
   public:
 	virtual ~SceneObject() = default;
@@ -80,11 +90,13 @@ class SceneObject {
 		}
 	}
 
-	virtual void Render(Renderer &renderer) {
+	virtual void Render(Renderer &renderer, Scene *scene) {
 		for (RendererComponent *renderComp : renderComponents) {
-			renderComp->Render(renderer);
+			renderComp->Render(renderer, scene);
 		}
 	}
+
+	inline RenderingOrder GetRenderingOrder() { return renderingOrder; }
 
   protected:
 	std::vector<Component *> components;

@@ -37,7 +37,7 @@ find_package(OpenGL REQUIRED)
 target_link_libraries(${PROJECT_NAME} PUBLIC opengl32) # assumes opengl32 can be found on your system
 
 # glew
-set(GLEW_DIR ${LIB_DIR}/glew-2.1.0)
+set(GLEW_DIR "${LIB_DIR}/glew-2.1.0")
 target_link_libraries(${PROJECT_NAME} PUBLIC ${GLEW_DIR}/lib/Release/x64/glew32.lib)
 target_include_directories(${PROJECT_NAME} PUBLIC ${GLEW_DIR}/include)
 add_custom_command(
@@ -48,12 +48,12 @@ add_custom_command(
 )
 
 # cyCodeBase
-set(CYCODEBASE_DIR ${LIB_DIR}/cyCodeBase)
+set(CYCODEBASE_DIR "${LIB_DIR}/cyCodeBase" CACHE PATH "Path to cyCodeBase")
 target_include_directories(${PROJECT_NAME} PUBLIC ${CYCODEBASE_DIR})
 
 
 # lodepng
-set(LODEPNG_DIR ${LIB_DIR}/lodepng)
+set(LODEPNG_DIR "${LIB_DIR}/lodepng" CACHE PATH "Path to lodepng")
 target_include_directories(${PROJECT_NAME} PRIVATE ${LODEPNG_DIR})
 target_sources(${PROJECT_NAME} PRIVATE ${LODEPNG_DIR}/lodepng.cpp)
 

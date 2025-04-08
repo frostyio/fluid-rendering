@@ -13,7 +13,7 @@ class FluidObject : public SceneObject {
 	Vec3f color = {0, 0, 1};
 
   public:
-	FluidObject() {};
+	FluidObject() { renderingOrder = RenderingOrder::Post; };
 
 	inline void SetPosition(const Vec3f &pos) {
 		position = pos;
@@ -28,7 +28,9 @@ class FluidObject : public SceneObject {
 		RefreshState();
 	}
 
-	void Render(Renderer &renderer) override;
+	inline Vec3f &GetColor() const;
+
+	void Render(Renderer &renderer, Scene *scene) override;
 
 	bool fromFile(const std::string &path);
 	bool fromSimulation();

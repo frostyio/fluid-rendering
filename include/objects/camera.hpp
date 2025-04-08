@@ -54,6 +54,8 @@ class CameraObject : public SceneObject {
 	inline Matrix4f GetView() const { return viewMatrix; }
 	inline Matrix4f GetProjection() const { return projMatrix; }
 	void UpdateState();
+
+	inline float GetFov() const { return fov; }
 };
 
 } // namespace engine

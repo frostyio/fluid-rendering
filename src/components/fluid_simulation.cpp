@@ -1,4 +1,9 @@
 #include "components/fluid_simulation.hpp"
+#include "common/typedefs.hpp"
+#include "core/renderer.hpp"
+#include "core/scene_object.hpp"
+#include "objects/camera.hpp"
+#include "objects/skybox.hpp"
 #include <optional>
 
 using namespace engine;
@@ -91,19 +96,30 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 	std::vector<std::vector<Vec3f>> allFrames;
 	findAndExtractPointsRecursive(archive.getTop(), allFrames);
 
+	int maxPoints = allFrames[0].size();
+	for (const auto &frame : allFrames) {
+		if ((int)frame.size() > maxPoints)
+			maxPoints = frame.size();
+	}
+
 	std::cout << "total frames read: " << allFrames.size() << std::endl;
-	std::cout << "points in first frame: "
-			  << (allFrames.empty() ? 0 : allFrames[0].size()) << std::endl;
+	std::cout << "max points: " << (allFrames.empty() ? 0 : maxPoints)
+			  << std::endl;
 
 	std::vector<Vec3f> allFrameData;
 	currentFrame = 0;
-	numPoints = allFrames[0].size();
+
+	numPoints = maxPoints;
 	numFrames = allFrames.size();
 
-	for (const auto &frame : allFrames) {
+	for (auto &frame : allFrames) {
+		frame.resize(maxPoints, Vec3f(0.0f, 1000.0f, 0.0f)); // pad
 		allFrameData.insert(allFrameData.end(), frame.begin(), frame.end());
 	}
 
+	std::cout << "made frame data!" << std::endl;
+
+	// frame data
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
@@ -118,6 +134,111 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// depth mapping
+	// a
+	glGenFramebuffers(1, &depthFBOA);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOA);
+
+	glGenTextures(1, &depthTextureA);
+	glBindTexture(GL_TEXTURE_2D, depthTextureA);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640,
+				 480, // width and height hard-coded for now
+				 0, GL_RED, GL_FLOAT, nullptr);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+						   depthTextureA, 0);
+	GLuint depthRenderbuffer;
+	glGenRenderbuffers(1, &depthRenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 640, 480);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+							  GL_RENDERBUFFER, depthRenderbuffer);
+
+	GLenum drawBuffers[1] = {GL_COLOR_ATTACHMENT0};
+	glDrawBuffers(1, drawBuffers);
+
+	// b
+	glGenFramebuffers(1, &depthFBOB);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthFBOB);
+
+	glGenTextures(1, &depthTextureB);
+	glBindTexture(GL_TEXTURE_2D, depthTextureB);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640,
+				 480, // width and height hard-coded for now
+				 0, GL_RED, GL_FLOAT, nullptr);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+						   depthTextureB, 0);
+	GLuint depthRenderbuffer2;
+	glGenRenderbuffers(1, &depthRenderbuffer2);
+	glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer2);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 640, 480);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+							  GL_RENDERBUFFER, depthRenderbuffer2);
+
+	glDrawBuffers(1, drawBuffers);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// filtering
+	glGenFramebuffers(1, &filterFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, filterFBO);
+
+	glGenTextures(1, &filteredDepthTexture);
+	glBindTexture(GL_TEXTURE_2D, filteredDepthTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640, 480, // more hard-coded
+				 0, GL_RED, GL_FLOAT, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+						   filteredDepthTexture, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// normal frame buffer
+	glGenFramebuffers(1, &normalFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);
+
+	glGenTextures(1, &normalTexture);
+	glBindTexture(GL_TEXTURE_2D, normalTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 640, 480, 0, GL_RGB, GL_FLOAT,
+				 nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	// idk if this does what i want
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+						   normalTexture, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// thickness
+
+	glGenTextures(1, &thicknessTexture);
+	glBindTexture(GL_TEXTURE_2D, thicknessTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640, 480, 0, GL_RED,
+				 GL_FLOAT, // hard-coded
+				 nullptr);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glGenFramebuffers(1, &thicknessFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, thicknessFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+						   thicknessTexture, 0);
 }
 
 void BakedPointDataComponent::Bind() { glBindVertexArray(vao); }
@@ -132,6 +253,178 @@ void BakedPointDataComponent::Update(double dt) {
 	}
 }
 
+void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
+								   Matrix4f model) {
+	SceneObject *owner = GetOwner();
+	if (owner != nullptr) {
+		GLuint old = CurrentDrawFBO();
+
+		constexpr int pointSize = 10;
+
+		// thickness
+		renderer.BindProgram("thicknessMap");
+		glBindFramebuffer(GL_FRAMEBUFFER, thicknessFBO);
+		glViewport(0, 0, 640, 480); // hard-coded
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+		Bind();
+		renderer.SetModel(model);
+		renderer.SetView(scene->GetActiveCamera()->GetView());
+		renderer.SetProjection(scene->GetActiveCamera()->GetProjection());
+		renderer.SetUniform("pointSize", pointSize * 2);
+		glDrawArrays(GL_POINTS, currentFrame * numPoints, numPoints);
+		glDisable(GL_BLEND);
+
+		// PARTICLE DEPTH MAP
+		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
+		glDepthFunc(GL_LESS); // or GL_LEQUAL
+		glDisable(GL_CULL_FACE);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, depthFBOA);
+		glViewport(0, 0, 640, 480); // hard-coded
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		renderer.BindProgram("waterDepth");
+		renderer.SetModel(model);
+		renderer.SetView(scene->GetActiveCamera()->GetView());
+		renderer.SetProjection(scene->GetActiveCamera()->GetProjection());
+		renderer.SetUniform("pointSize", pointSize);
+		Bind(); // binds vao
+		glDrawArrays(GL_POINTS, currentFrame * numPoints, numPoints);
+
+		// NARROW FILTER
+
+		int numPasses = 3;
+		bool ping = true;
+		GLuint inputTex = depthTextureA;
+		GLuint outputTex = depthTextureB;
+
+		float aspect = 640.0f / 480.0f;
+		float fov_v_rad =
+			2.0f *
+			std::atan(
+				std::tan(deg2rad(scene->GetActiveCamera()->GetFov()) / 2.0f) /
+				aspect);
+		float r = pointSize;
+
+		for (int i = 0; i < numPasses; ++i) {
+			glBindFramebuffer(GL_FRAMEBUFFER, filterFBO);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+								   GL_TEXTURE_2D, outputTex, 0);
+			glViewport(0, 0, 640, 480);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			renderer.BindProgram("narrowFilter");
+			renderer.BindTexture("uDepthTex", inputTex, GL_TEXTURE0);
+
+			renderer.SetUniform("uDelta", 10 * r);
+			renderer.SetUniform("uMu", r);
+			renderer.SetUniform("uWorldSigma", 0.7f * r);
+
+			renderer.SetUniform("uFOV", fov_v_rad);
+			renderer.SetUniform("uScreenHeight", 480.0f);
+
+			renderer.DrawFullscreenQuad();
+
+			std::swap(inputTex, outputTex);
+		}
+
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, ping ? depthFBOB : depthFBOA);
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+							   GL_TEXTURE_2D, filteredDepthTexture, 0);
+		glBlitFramebuffer(0, 0, 640, 480, 0, 0, 640, 480,
+						  GL_COLOR_BUFFER_BIT, // hard-coded
+						  GL_NEAREST);
+
+		// NORMAL RECONSTRUCTION
+		glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);
+		glViewport(0, 0, 640, 480); // hard-coded
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		renderer.BindProgram("normalReconstruction");
+		renderer.BindTexture("uFilteredDepth", filteredDepthTexture,
+							 GL_TEXTURE0);
+		renderer.SetUniform("uFOV", fov_v_rad);
+		renderer.SetUniform("uScreenHeight", 480.0f); // hard-coded
+
+		renderer.DrawFullscreenQuad();
+
+		// RENDERING
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		renderer.BindProgram("fluidProgram");
+
+		renderer.SetModel(model);
+		renderer.SetView(scene->GetActiveCamera()->GetView());
+		renderer.SetProjection(scene->GetActiveCamera()->GetProjection());
+		renderer.SetUniform("viewPos", scene->GetActiveCamera()->GetPosition());
+		renderer.SetUniform("lightPos", scene->GetSunPosition());
+
+		renderer.SetUniform("materialType", 1);
+		renderer.SetUniform("shading", 1);
+
+		renderer.SetUniform("shininess", 64.0f);
+		renderer.SetUniform("ambientColor", Vec3f(0.1f, 0.2f, 0.25f));
+		renderer.SetUniform("diffuseColor", Vec3f(0.25f, 0.55f, 0.75f));
+		renderer.SetUniform("specularColor", Vec3f(1.0f, 1.0f, 1.0f));
+
+		renderer.BindTexture("uNormalTex", normalTexture, GL_TEXTURE0);
+		renderer.BindTexture("uDepthTex", filteredDepthTexture, GL_TEXTURE1);
+		renderer.BindTexture("uThicknessTex", thicknessTexture, GL_TEXTURE2);
+		glActiveTexture(GL_TEXTURE3);
+		scene->GetActiveSkybox()->GetTexture().Bind();
+		renderer.SetUniform("uSkyboxTex", 3);
+		renderer.BindTexture("uOpaqueDepthTex",
+							 renderer.FindBuffer("opaque")->depthTex,
+							 GL_TEXTURE4);
+		renderer.BindTexture("uBackgroundColorTex",
+							 renderer.FindBuffer("opaque")->texture,
+							 GL_TEXTURE5);
+
+		renderer.SetUniform("uFovY", fov_v_rad);
+		renderer.SetUniform("uAspect", aspect);
+		// renderer.SetUniform("uTime", (float)glfwGetTime());
+		renderer.SetUniform("uTime", fmod((float)glfwGetTime(), 60.0f));
+
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		renderer.BindBuffer(old);
+		renderer.DrawFullscreenQuad();
+
+		// DEBUG
+		// glEnable(GL_BLEND);
+		// glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		// renderer.BindBuffer(old);
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// renderer.BindProgram("debugDisplay");
+		// renderer.BindTexture("uTexture", depthTextureA);
+		// renderer.BindTexture("uTexture", normalTexture);
+		// renderer.BindTexture("uTexture",
+		// renderer.FindBuffer("opaque")->texture);
+		// renderer.DrawFullscreenQuad();
+
+		// revert if we changed & then render normally
+		// glDisable(GL_BLEND);
+		// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		// glViewport(0, 0, 640, 480); // HARD-CODED, BAD
+
+		// renderer.BindProgram("default");
+		// renderer.SetUniform("materialType", 0);
+
+		// glClear(GL_DEPTH_BUFFER_BIT);
+		// Bind();
+		// glDrawArrays(GL_POINTS, currentFrame * numPoints, numPoints);
+	} else {
+		// render normally
+		glDrawArrays(GL_POINTS, currentFrame * numPoints, numPoints);
+	}
+}
+
 void FluidSimulationComponent::Bind() {}
 void FluidSimulationComponent::Update(double) {}
-void FluidSimulationComponent::Draw() {}
+void FluidSimulationComponent::Draw(Renderer &renderer, Scene *scene,
+									Matrix4f model) {}

@@ -14,14 +14,14 @@ bool FluidObject::fromFile(const std::string &path) {
 	return true;
 }
 
-void FluidObject::Render(Renderer &renderer) {
+void FluidObject::Render(Renderer &renderer, Scene *scene) {
 	fluid->Bind();
 	renderer.SetUniform("ambientColor", color);
 	renderer.SetShadingType(ShadingType::SolidAmbient);
-	renderer.SetUniform("model", Matrix4f::Translation(position) *
-									 rotation.ToMatrix4() *
-									 Matrix4f::Scale(size));
+	Matrix4f modelMatrix = Matrix4f::Translation(position) *
+						   rotation.ToMatrix4() * Matrix4f::Scale(size);
+	renderer.SetUniform("model", modelMatrix);
 	renderer.DrawMesh();
-	fluid->Draw();
-	SceneObject::Render(renderer);
+	fluid->Draw(renderer, scene, modelMatrix);
+	SceneObject::Render(renderer, scene);
 }

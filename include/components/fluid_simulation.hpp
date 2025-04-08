@@ -1,6 +1,8 @@
 #ifndef _FLUID_SIMULATION_H_
 #define _FLUID_SIMULATION_H_
 
+#include "core/renderer.hpp"
+#include "core/scene.hpp"
 #include <optional>
 
 #undef max
@@ -22,12 +24,18 @@ class FluidData : public Component, public IUpdatable {
   public:
 	virtual ~FluidData() = default;
 	virtual void Bind() = 0;
-	virtual void Draw() = 0;
+	virtual void Draw(Renderer &renderer, Scene *scene, Matrix4f model) = 0;
 };
 
 class BakedPointDataComponent : public FluidData {
   private:
 	GLuint vao, buffer;
+	GLuint depthFBOA, depthTextureA;
+	GLuint depthFBOB, depthTextureB;
+	GLuint filteredDepthTexture, filterFBO;
+	GLuint normalFBO, normalTexture;
+	GLuint thicknessFBO, thicknessTexture;
+
 	size_t currentFrame, numPoints, numFrames;
 	float timer = 0;
 
@@ -38,9 +46,7 @@ class BakedPointDataComponent : public FluidData {
 
 	void Bind() override;
 	void Update(double dt) override;
-	void Draw() override {
-		glDrawArrays(GL_POINTS, currentFrame * numPoints, numPoints);
-	}
+	void Draw(Renderer &renderer, Scene *scene, Matrix4f model) override;
 };
 
 class FluidSimulationComponent : public FluidData {
@@ -50,7 +56,7 @@ class FluidSimulationComponent : public FluidData {
   public:
 	void Bind() override;
 	void Update(double dt) override;
-	void Draw() override;
+	void Draw(Renderer &renderer, Scene *scene, Matrix4f model) override;
 };
 
 } // namespace engine
