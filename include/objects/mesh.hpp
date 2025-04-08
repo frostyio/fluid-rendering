@@ -2,6 +2,7 @@
 #define _MESH_H_
 
 #include "components/mesh_renderer.hpp"
+#include "core/scene.hpp"
 #include "core/scene_object.hpp"
 #include <memory>
 
@@ -34,7 +35,11 @@ class MeshObject : public SceneObject {
 	inline void SetMeshColor(const Vec3f &c) { color = c; }
 	inline void SetShininess(const float &f) { shininess = f; }
 
-	void Render(Renderer &renderer) override;
+	inline void SetTextures(const std::string &path) {
+		mesh->SetTextures(path);
+	}
+
+	void Render(Renderer &renderer, Scene *scene) override;
 };
 
 } // namespace engine

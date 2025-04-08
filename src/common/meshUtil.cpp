@@ -34,22 +34,26 @@ void preprocessOBJ(const cy::TriMesh &mesh, std::vector<Vertex> &outV,
 	}
 }
 
-void loadImage(std::vector<unsigned char> &image, unsigned &width,
+bool loadImage(std::vector<unsigned char> &image, unsigned &width,
 			   unsigned &height, std::string path) {
 	unsigned error = lodepng::decode(image, width, height, path);
 	if (error) {
 		std::cout << "failed to load texture at '" << path
 				  << "' with error: " << lodepng_error_text(error) << std::endl;
-		exit(-1);
+		return false;
 	}
+	return true;
 }
 
-void loadTexture(cyGLTexture2D &tex, std::string path) {
+bool loadTexture(cyGLTexture2D &tex, std::string path) {
 	std::vector<unsigned char> image;
 	unsigned image_width, image_height;
-	loadImage(image, image_width, image_height, path);
+	if (!loadImage(image, image_width, image_height, path))
+		return false;
 
 	tex.Initialize();
 	tex.SetImage(image.data(), 4, image_width, image_height);
 	tex.BuildMipmaps();
+
+	return true;
 }

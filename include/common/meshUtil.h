@@ -7,9 +7,9 @@
 void preprocessOBJ(const cy::TriMesh &mesh, std::vector<engine::Vertex> &outV,
 				   std::vector<unsigned int> &outI);
 
-void loadImage(std::vector<unsigned char> &image, unsigned &width,
+bool loadImage(std::vector<unsigned char> &image, unsigned &width,
 			   unsigned &height, std::string path);
 
-void loadTexture(cyGLTexture2D &tex, std::string path);
+bool loadTexture(cyGLTexture2D &tex, std::string path);
 
 #endif

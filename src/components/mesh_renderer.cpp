@@ -1,6 +1,7 @@
 #include "components/mesh_renderer.hpp"
 #include "common/meshUtil.h"
 #include "common/typedefs.hpp"
+#include "core/renderer.hpp"
 #include "core/scene_object.hpp"
 
 void createVertexArrayAndBuffer(GLuint &VAO, GLuint &VBO, GLuint &EBO) {
@@ -86,22 +87,64 @@ void MeshRendererComponent::UpdateModelMatrix() {
 			cy::Matrix4f::Translation(owner->GetPosition());
 		modelMatrix = positionMatrix * rotationMatrix * scaleMatrix2 *
 					  scaleMatrix * originMatrix;
-		// modelMatrix = positionMatrix * rotationMatrix * scaleMatrix2;
-		// modelMatrix = positionMatrix;
-
 	} else {
 		modelMatrix = scaleMatrix * originMatrix;
 	}
 }
 
-void MeshRendererComponent::Render(Renderer &renderer) {
+void MeshRendererComponent::Render(Renderer &renderer, Scene *scene) {
 	if (!hasSentData)
 		SendData(renderer);
 
 	Bind(renderer);
 	renderer.SetUniform("model", modelMatrix);
+	renderer.SetShadingType(ShadingType::BlinnPhong);
 	renderer.DrawMesh(); // set shading uniform
+
+	renderer.SetUniform("hasDiff", false);
+	renderer.SetUniform("uDispTex", false);
+	renderer.SetUniform("uNormalTex", false);
+	renderer.SetUniform("uRoughTex", false);
+
+	if (hasDiffuse) {
+		diffuseTex.Bind(0);
+		renderer.SetUniform("uDiffTex", 0);
+		renderer.SetUniform("hasDiff", true);
+	}
+	// if (hasDisp) {
+	// 	dispTex.Bind(1);
+	// 	renderer.SetUniform("uDispTex", 1);
+	// }
+	if (hasNormal) {
+		normalTex.Bind(2);
+		renderer.SetUniform("uNormalTex", 2);
+	}
+	if (hasRough) {
+		roughTex.Bind(3);
+		renderer.SetUniform("uRoughTex", 3);
+	}
+
 	glDrawElements(GL_TRIANGLES, NV(), GL_UNSIGNED_INT, 0);
 }
 
 void MeshRendererComponent::Update() { UpdateModelMatrix(); }
+
+void MeshRendererComponent::SetTextures(const std::string path) {
+	if (loadTexture(diffuseTex, path + "/diff.png")) {
+		diffuseTex.SetWrappingMode(GL_REPEAT, GL_REPEAT);
+		diffuseTex.SetFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+		hasDiffuse = true;
+	}
+	// if (loadTexture(dispTex, path + "/disp.png"))
+	// 	hasDisp = true;
+	if (loadTexture(normalTex, path + "/norm.png")) {
+		normalTex.SetWrappingMode(GL_REPEAT, GL_REPEAT);
+		normalTex.SetFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+		hasNormal = true;
+	}
+	if (loadTexture(roughTex, path + "/rough.png")) {
+		roughTex.SetWrappingMode(GL_REPEAT, GL_REPEAT);
+		roughTex.SetFilteringMode(GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR);
+		hasRough = true;
+	}
+}

@@ -2,6 +2,7 @@
 #define _MESH_RENDERER_COMPONENT_H_
 
 #include "common/common.hpp"
+#include "common/typedefs.hpp"
 #include "components/renderer.hpp"
 #include "core/renderer.hpp"
 
@@ -15,6 +16,11 @@ class MeshRendererComponent : public RendererComponent {
 	std::vector<Vertex> vertices;
 	std::vector<unsigned int> indices;
 	bool hasSentData = false;
+
+	bool hasDiffuse = false, hasNormal = false, hasRough = false,
+		 hasDisp = false;
+	// GLuint diffuseTex, normalTex, roughTex, dispTex;
+	cyGLTexture2D diffuseTex, normalTex, roughTex, dispTex;
 
   protected:
 	Vec3f meshSize = Vec3f{};
@@ -38,8 +44,9 @@ class MeshRendererComponent : public RendererComponent {
 	inline Matrix4f GetModelMatrix() const { return modelMatrix; }
 
 	void SetMeshSize(const Vec3f &size);
+	void SetTextures(const std::string path);
 
-	void Render(Renderer &renderer) override;
+	void Render(Renderer &renderer, Scene *scene) override;
 	void Update() override;
 };
 
