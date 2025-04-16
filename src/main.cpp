@@ -11,7 +11,7 @@
 #undef min
 #undef max
 
-int width, height;
+static cy::Vec2f windowSize;
 
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 						int mods) {
@@ -74,7 +74,7 @@ engine::Scene *makeDefaultScene() {
 	engine::CameraObject *camera = new engine::CameraObject({0, 0, 0});
 	scene->AddObject(std::unique_ptr<engine::SceneObject>(camera));
 	scene->SetActiveCamera(camera);
-	camera->SetAspectRatio((float)width / (float)height);
+	camera->SetAspectRatio(windowSize.x / windowSize.y);
 
 	{
 		const std::vector<Vertex> PLANE_VERTICES = {
@@ -173,7 +173,8 @@ int main(int argc, char **argv) {
 	GLFW_SETUP;
 
 #ifdef PROJECT_NAME
-	CREATE_GLFW_WINDOW(640, 480, PROJECT_NAME);
+	// CREATE_GLFW_WINDOW(640, 480, PROJECT_NAME);
+	CREATE_GLFW_WINDOW(1280, 960, PROJECT_NAME);
 #else
 	exit(-1);
 #endif
@@ -191,10 +192,12 @@ int main(int argc, char **argv) {
 	SETUP_DEBUG_CALLBACKS;
 
 	// opengl
+	int width, height;
 	glfwGetFramebufferSize(window, &width, &height);
+	windowSize = {(float)width, (float)height};
 
 	//
-	engine::Renderer renderer = engine::Renderer(width, height);
+	engine::Renderer renderer = engine::Renderer(&windowSize);
 
 	// renderer setup
 	GLSLProgram prog;
@@ -236,6 +239,8 @@ int main(int argc, char **argv) {
 	thicknessProgram.BuildFiles("assets/shaders/depth_pass.vert",
 								"assets/shaders/thickness.frag");
 	renderer.CreateProgram("thicknessMap", &thicknessProgram);
+
+	// scenes
 
 	auto programScenes = makeScenes();
 	unsigned int sceneIndex = 0;

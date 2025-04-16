@@ -3,19 +3,20 @@
 
 using namespace engine;
 
-Renderer::Renderer(int width, int height)
+Renderer::Renderer(const cy::Vec2f *windowSize)
 	: dummy2DTexture(0), dummyCubemapTexture(0),
-	  dummyTexturesInitialized(false), width(width), height(height) {
+	  dummyTexturesInitialized(false), windowSize(windowSize) {
 	glEnable(GL_DEPTH_TEST);
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, (int)windowSize->x, (int)windowSize->y);
 	glClearColor(0, 0, 0, 1);
 	InitializeDummyTextures();
 
 	// default framebuffers
-	CreateBuffer("opaque", width, height, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
-				 GL_RGBA8, GL_RGBA, GL_UNSIGNED_BYTE, true);
-	CreateBuffer("trans", width, height);
-	CreateBuffer("post", width, height);
+	CreateBuffer("opaque", (int)windowSize->x, (int)windowSize->y,
+				 GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_RGBA8, GL_RGBA,
+				 GL_UNSIGNED_BYTE, true);
+	CreateBuffer("trans", (int)windowSize->x, (int)windowSize->y);
+	CreateBuffer("post", (int)windowSize->x, (int)windowSize->y);
 
 	// quad
 	float quadVertices[] = {
@@ -213,7 +214,7 @@ void Renderer::SetDummyTextures() {
 
 void Renderer::Composite() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, width, height);
+	glViewport(0, 0, (int)windowSize->x, (int)windowSize->y);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

@@ -42,6 +42,9 @@ class BakedPointDataComponent : public FluidData {
 	float timer = 0;
 	unsigned int loopCount = 0;
 
+	// unsigned int frameWidth = 640, frameHeight = 480;
+	unsigned int frameWidth = 1280, frameHeight = 960;
+
   public:
 	BakedPointDataComponent(const Alembic::Abc::IArchive &archive);
 	static std::optional<BakedPointDataComponent>

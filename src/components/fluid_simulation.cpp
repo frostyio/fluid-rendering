@@ -142,8 +142,8 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 
 	glGenTextures(1, &depthTextureA);
 	glBindTexture(GL_TEXTURE_2D, depthTextureA);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640,
-				 480, // width and height hard-coded for now
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, frameWidth,
+				 frameHeight, // width and height hard-coded for now
 				 0, GL_RED, GL_FLOAT, nullptr);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -154,7 +154,8 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 	GLuint depthRenderbuffer;
 	glGenRenderbuffers(1, &depthRenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 640, 480);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, frameWidth,
+						  frameHeight);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 							  GL_RENDERBUFFER, depthRenderbuffer);
 
@@ -167,8 +168,8 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 
 	glGenTextures(1, &depthTextureB);
 	glBindTexture(GL_TEXTURE_2D, depthTextureB);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640,
-				 480, // width and height hard-coded for now
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, frameWidth,
+				 frameHeight, // width and height hard-coded for now
 				 0, GL_RED, GL_FLOAT, nullptr);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -179,7 +180,8 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 	GLuint depthRenderbuffer2;
 	glGenRenderbuffers(1, &depthRenderbuffer2);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthRenderbuffer2);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 640, 480);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, frameWidth,
+						  frameHeight);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 							  GL_RENDERBUFFER, depthRenderbuffer2);
 
@@ -193,7 +195,8 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 
 	glGenTextures(1, &filteredDepthTexture);
 	glBindTexture(GL_TEXTURE_2D, filteredDepthTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640, 480, // more hard-coded
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, frameWidth,
+				 frameHeight, // more hard-coded
 				 0, GL_RED, GL_FLOAT, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -208,8 +211,8 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 
 	glGenTextures(1, &normalTexture);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 640, 480, 0, GL_RGB, GL_FLOAT,
-				 nullptr);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, frameWidth, frameHeight, 0,
+				 GL_RGB, GL_FLOAT, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -226,7 +229,7 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 
 	glGenTextures(1, &thicknessTexture);
 	glBindTexture(GL_TEXTURE_2D, thicknessTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, 640, 480, 0, GL_RED,
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, frameWidth, frameHeight, 0, GL_RED,
 				 GL_FLOAT, // hard-coded
 				 nullptr);
 
@@ -266,7 +269,7 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 		// thickness
 		renderer.BindProgram("thicknessMap");
 		glBindFramebuffer(GL_FRAMEBUFFER, thicknessFBO);
-		glViewport(0, 0, 640, 480); // hard-coded
+		glViewport(0, 0, frameWidth, frameHeight); // hard-coded
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
@@ -285,7 +288,7 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 		glDisable(GL_CULL_FACE);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, depthFBOA);
-		glViewport(0, 0, 640, 480); // hard-coded
+		glViewport(0, 0, frameWidth, frameHeight); // hard-coded
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		renderer.BindProgram("waterDepth");
@@ -303,7 +306,7 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 		GLuint inputTex = depthTextureA;
 		GLuint outputTex = depthTextureB;
 
-		float aspect = 640.0f / 480.0f;
+		float aspect = (float)frameWidth / (float)frameHeight;
 		float fov_v_rad =
 			2.0f *
 			std::atan(
@@ -315,7 +318,7 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 			glBindFramebuffer(GL_FRAMEBUFFER, filterFBO);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 								   GL_TEXTURE_2D, outputTex, 0);
-			glViewport(0, 0, 640, 480);
+			glViewport(0, 0, frameWidth, frameHeight);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			renderer.BindProgram("narrowFilter");
@@ -326,7 +329,7 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 			renderer.SetUniform("uWorldSigma", 0.7f * r);
 
 			renderer.SetUniform("uFOV", fov_v_rad);
-			renderer.SetUniform("uScreenHeight", 480.0f);
+			renderer.SetUniform("uScreenHeight", (float)frameHeight);
 
 			renderer.DrawFullscreenQuad();
 
@@ -336,20 +339,21 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, ping ? depthFBOB : depthFBOA);
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
 							   GL_TEXTURE_2D, filteredDepthTexture, 0);
-		glBlitFramebuffer(0, 0, 640, 480, 0, 0, 640, 480,
+		glBlitFramebuffer(0, 0, frameWidth, frameHeight, 0, 0, frameWidth,
+						  frameHeight,
 						  GL_COLOR_BUFFER_BIT, // hard-coded
 						  GL_NEAREST);
 
 		// NORMAL RECONSTRUCTION
 		glBindFramebuffer(GL_FRAMEBUFFER, normalFBO);
-		glViewport(0, 0, 640, 480); // hard-coded
+		glViewport(0, 0, frameWidth, frameHeight); // hard-coded
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		renderer.BindProgram("normalReconstruction");
 		renderer.BindTexture("uFilteredDepth", filteredDepthTexture,
 							 GL_TEXTURE0);
 		renderer.SetUniform("uFOV", fov_v_rad);
-		renderer.SetUniform("uScreenHeight", 480.0f); // hard-coded
+		renderer.SetUniform("uScreenHeight", (float)frameHeight); // hard-coded
 
 		renderer.DrawFullscreenQuad();
 

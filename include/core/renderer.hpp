@@ -22,7 +22,7 @@ inline GLint CurrentDrawFBO() {
 class Renderer {
   private:
 	// RENDERER CONFIG
-	int width, height;
+	const cy::Vec2f *windowSize;
 
 	// STATE
 
@@ -65,7 +65,7 @@ class Renderer {
 	GLuint fullscreenQuadVAO, fullscreenQuadVBO;
 
   public:
-	Renderer(int width, int height);
+	Renderer(const cy::Vec2f *windowSize);
 	~Renderer();
 
 	void CreateProgram(std::string name, GLSLProgram *prog);
