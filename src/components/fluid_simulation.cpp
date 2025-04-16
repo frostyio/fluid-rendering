@@ -431,7 +431,11 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 }
 
 bool BakedPointDataComponent::IsFinished() { return loopCount > 0; }
-void BakedPointDataComponent::Reset() { loopCount = 0; }
+void BakedPointDataComponent::Reset() {
+	timer = 0;
+	loopCount = 0;
+	currentFrame = 0;
+}
 
 void FluidSimulationComponent::Bind() {}
 void FluidSimulationComponent::Update(double) {}
