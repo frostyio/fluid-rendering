@@ -18,6 +18,7 @@ class MeshObject : public SceneObject {
 	MeshObject();
 	MeshObject(cy::TriMesh &mesh);
 	MeshObject(const std::vector<Vertex> &, const std::vector<unsigned int> &);
+	MeshObject(const Vec3f &siz);
 
 	inline void SetPosition(const Vec3f &pos) {
 		position = pos;
