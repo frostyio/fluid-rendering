@@ -96,7 +96,10 @@ BakedPointDataComponent::create(const std::string &path) {
 	if (!archiveOpt.has_value())
 		return std::nullopt;
 
-	return BakedPointDataComponent(*archiveOpt);
+	size_t nPoints, nFrames;
+	auto frameData = createFrameData(*archiveOpt, nPoints, nFrames);
+
+	return BakedPointDataComponent(frameData, nPoints, nFrames);
 }
 
 std::optional<std::vector<Vec3f>>
@@ -140,10 +143,10 @@ BakedPointDataComponent::createFrameData(const IArchive &archive,
 	return allFrameData;
 }
 
-BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
-	std::vector<Vec3f> allFrameData =
-		createFrameData(archive, numPoints, numFrames);
-
+BakedPointDataComponent::BakedPointDataComponent(
+	const std::vector<Vec3f> &allFrameData, const size_t &nPoints,
+	const size_t &nFrames)
+	: numPoints(nPoints), numFrames(nFrames) {
 	// frame data
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);

@@ -46,7 +46,9 @@ class BakedPointDataComponent : public FluidData {
 	unsigned int frameWidth = 1280, frameHeight = 960;
 
   public:
-	BakedPointDataComponent(const Alembic::Abc::IArchive &archive);
+	BakedPointDataComponent(const std::vector<Vec3f> &allFrameData,
+							const size_t &nPoints, const size_t &nFrames);
+	// BakedPointDataComponent(const Alembic::Abc::IArchive &archive);
 	static std::optional<BakedPointDataComponent>
 	create(const std::string &path);
 	static std::vector<Vec3f>

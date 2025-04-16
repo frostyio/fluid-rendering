@@ -14,6 +14,14 @@ bool FluidObject::fromFile(const std::string &path) {
 	return true;
 }
 
+bool FluidObject::fromFrameData(const std::vector<Vec3f> &frameData,
+								const size_t &nPoints, const size_t &nFrames) {
+	fluid = std::make_unique<BakedPointDataComponent>(std::move(frameData),
+													  nPoints, nFrames);
+	AddComponent(fluid.get());
+	return true;
+}
+
 void FluidObject::Render(Renderer &renderer, Scene *scene) {
 	fluid->Bind();
 	renderer.SetUniform("ambientColor", color);

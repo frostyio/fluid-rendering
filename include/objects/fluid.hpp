@@ -33,6 +33,8 @@ class FluidObject : public SceneObject {
 	void Render(Renderer &renderer, Scene *scene) override;
 
 	bool fromFile(const std::string &path);
+	bool fromFrameData(const std::vector<Vec3f> &, const size_t &numPoints,
+					   const size_t &numFrames);
 	bool fromSimulation();
 
 	bool IsFinished() { return fluid->IsFinished(); }
