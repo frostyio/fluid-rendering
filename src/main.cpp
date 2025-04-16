@@ -13,18 +13,38 @@
 
 static cy::Vec2f windowSize;
 
-static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
-						int mods) {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-
 static cy::Vec2<double> mouseChange(0.0, 0.0);
 static cy::Vec2<double> lastMousePos(0.0, 0.0);
 static bool isMouse1Pressed = false;
 static bool isMouse2Pressed = false;
 static cy::Vec2<double> accumulatedDrag(30., 20.);
-static double accumulatedZoom = 45.;
+static double accumulatedZoom = 70.;
+
+static int sceneIndex = 0;
+static engine::Scene *currentScene = nullptr;
+
+static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
+						int mods) {
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+
+	if (action == GLFW_PRESS && currentScene != nullptr) {
+		SceneObject *fluidObject = currentScene->GetObject("fluid");
+		FluidObject *fluid = nullptr;
+		if (fluidObject != nullptr)
+			fluid = dynamic_cast<FluidObject *>(fluidObject);
+
+		if (fluid == nullptr)
+			return;
+
+		if (key == GLFW_KEY_R)
+			fluid->Reset();
+		else if (key == GLFW_KEY_D)
+			sceneIndex++;
+		else if (key == GLFW_KEY_A)
+			sceneIndex--;
+	}
+}
 
 static void mouseCallback(GLFWwindow *window, int button, int action,
 						  int mods) {
@@ -243,8 +263,7 @@ int main(int argc, char **argv) {
 	// scenes
 
 	auto programScenes = makeScenes();
-	unsigned int sceneIndex = 0;
-	engine::Scene *scene = programScenes.at(sceneIndex);
+	currentScene = programScenes.at(sceneIndex);
 
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -267,22 +286,33 @@ int main(int argc, char **argv) {
 			cy::Vec3f{radius * cos(phi) * sin(theta), radius * sin(phi),
 					  radius * cos(phi) * cos(theta)};
 
-		SceneObject *fluidObject = scene->GetObject("fluid");
-		if (fluidObject != nullptr) {
-			FluidObject *fluid = dynamic_cast<FluidObject *>(fluidObject);
-			if (fluid != nullptr && fluid->IsFinished()) {
-				if (sceneIndex + 1 > programScenes.size() - 1)
-					sceneIndex = -1;
+		// scene handling
+		SceneObject *fluidObject = currentScene->GetObject("fluid");
+		FluidObject *fluid = nullptr;
+		if (fluidObject != nullptr)
+			fluid = dynamic_cast<FluidObject *>(fluidObject);
 
+		if (fluid != nullptr && fluid->IsFinished())
+			sceneIndex++;
+
+		if (sceneIndex > programScenes.size() - 1)
+			sceneIndex = 0;
+		// if (sceneIndex < 0)
+		// 	sceneIndex = programScenes.size() - 1;
+
+		if (programScenes.at(sceneIndex) != currentScene) {
+			if (fluid != nullptr)
 				fluid->Reset();
-				scene = programScenes.at(++sceneIndex);
-				std::cout << "moving onto scene: " << sceneIndex << std::endl;
-			}
+
+			currentScene = programScenes.at(sceneIndex);
+			std::cout << "moving to scene #" << sceneIndex << std::endl;
 		}
 
-		scene->GetActiveCamera()->SetPosition(cameraPos);
-		scene->Update(dt);
-		scene->Render(renderer);
+		//
+
+		currentScene->GetActiveCamera()->SetPosition(cameraPos);
+		currentScene->Update(dt);
+		currentScene->Render(renderer);
 
 		renderer.EndFrame(window);
 		glfwPollEvents();
