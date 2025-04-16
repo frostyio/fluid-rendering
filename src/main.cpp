@@ -7,6 +7,7 @@
 #include "objects/mesh.hpp"
 #include "objects/skybox.hpp"
 #include <memory>
+#include <vector>
 #undef min
 #undef max
 
@@ -66,6 +67,108 @@ Quatf FromAxisAngle(const Vec3f &axis, float angle_rad) {
 	return {cosf(half_angle), axis.x * s, axis.y * s, axis.z * s};
 }
 
+engine::Scene *makeDefaultScene() {
+	engine::Scene *scene = new engine::Scene();
+	scene->SetSunPosition({30, 20, 30});
+
+	engine::CameraObject *camera = new engine::CameraObject({0, 0, 0});
+	scene->AddObject(std::unique_ptr<engine::SceneObject>(camera));
+	scene->SetActiveCamera(camera);
+	camera->SetAspectRatio((float)width / (float)height);
+
+	{
+		const std::vector<Vertex> PLANE_VERTICES = {
+			{{-1.0, 0.0, -1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}},
+			{{1.0, 0.0, -1.0}, {0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}},
+			{{1.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}},
+			{{-1.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0}}};
+		const std::vector<unsigned int> PLANE_INDICES = {0, 1, 2, 2, 3, 0};
+		engine::MeshObject *meshObject =
+			new engine::MeshObject(PLANE_VERTICES, PLANE_INDICES);
+		meshObject->SetPosition({0, -22, 0});
+		meshObject->SetMeshSize({200, 1, 200});
+		meshObject->SetMeshColor({.2, .2, .2});
+		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
+		// meshObject->SetTextures("assets/textures/stone_tile");
+		meshObject->SetTextures("assets/textures/brick");
+	}
+
+	engine::SkyboxObject *object = new engine::SkyboxObject();
+	scene->AddObject(std::unique_ptr<engine::SceneObject>(object));
+	scene->SetActiveSkybox(object);
+
+	return scene;
+}
+
+auto ObjectMakerFor(engine::Scene *scene) {
+	return [=](const Vec3f &position, const Vec3f &size) {
+		const float scale = 20.5f;
+		engine::MeshObject *meshObject = new engine::MeshObject(size * scale);
+		meshObject->SetPosition(position * scale);
+		meshObject->SetMeshColor({0.7f, 0.2f, 0.2f});
+		meshObject->SetTextures("assets/textures/brick");
+		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
+	};
+}
+
+engine::Scene *sceneOne() {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+
+	{
+
+		engine::FluidObject *object = new engine::FluidObject();
+		object->fromFile("assets/caches/prodScene1.abc");
+		object->SetPosition({0, -30, 0});
+		object->SetSize({20, 20, 20});
+		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+	}
+
+	// MakeObject({0, 0, 2}, {5, 5, 1});
+
+	return scene;
+}
+
+engine::Scene *sceneTwo() {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+
+	{
+
+		engine::FluidObject *object = new engine::FluidObject();
+		object->fromFile("assets/caches/prodScene2.abc");
+		object->SetPosition({0, -30, 0});
+		object->SetSize({20, 20, 20});
+		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+	}
+
+	MakeObject({1, -0.5, 1}, {.97, .97, .97});
+
+	return scene;
+}
+
+engine::Scene *sceneThree() {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+
+	{
+
+		engine::FluidObject *object = new engine::FluidObject();
+		object->fromFile("assets/caches/liquid2.abc");
+		object->SetPosition({0, -30, 0});
+		object->SetSize({20, 20, 20});
+		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+	}
+
+	return scene;
+}
+
+std::vector<engine::Scene *> makeScenes() {
+	std::vector<engine::Scene *> scenes = {sceneOne(), sceneTwo(),
+										   sceneThree()};
+	return scenes;
+}
+
 int main(int argc, char **argv) {
 	GLFW_SETUP;
 
@@ -92,8 +195,6 @@ int main(int argc, char **argv) {
 
 	//
 	engine::Renderer renderer = engine::Renderer(width, height);
-	engine::Scene *scene = new engine::Scene();
-	scene->SetSunPosition({30, 20, 30});
 
 	// renderer setup
 	GLSLProgram prog;
@@ -108,53 +209,6 @@ int main(int argc, char **argv) {
 							 "assets/shaders/composite.frag");
 	renderer.CreateProgram("_composite", &compositeProg);
 
-	// camera
-	engine::CameraObject *camera = new engine::CameraObject({0, 0, 0});
-	scene->AddObject(std::unique_ptr<engine::SceneObject>(camera));
-	scene->SetActiveCamera(camera);
-	camera->SetAspectRatio((float)width / (float)height);
-
-	//
-
-	// TEAPOT OBJECT
-	{
-		cy::TriMesh mesh;
-		LOAD_MESH_OR_EXIT(mesh, "assets/models/teapot.obj");
-		engine::MeshObject *meshObject = new engine::MeshObject(mesh);
-		meshObject->SetMeshColor({.4, 0.02, 0.02});
-		meshObject->SetPosition({-40, 0, 0});
-		meshObject->SetMeshSize({0.3, 0.3, 0.3});
-		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
-		Quatf rot = FromAxisAngle({1, 0, 0}, deg2rad(-90));
-		meshObject->SetRotation(rot);
-	}
-	// SPHERE LIGHT OBJECT
-	{
-		cy::TriMesh mesh;
-		LOAD_MESH_OR_EXIT(mesh, "assets/models/sphere.obj");
-		engine::MeshObject *meshObject = new engine::MeshObject(mesh);
-		meshObject->SetPosition(scene->GetSunPosition());
-		meshObject->SetMeshSize({0.3, 0.3, 0.3});
-		meshObject->SetMeshColor({1, 1, 0});
-		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
-	}
-	// PLANE
-	{
-		const std::vector<Vertex> PLANE_VERTICES = {
-			{{-1.0, 0.0, -1.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 0.0}},
-			{{1.0, 0.0, -1.0}, {0.0, 1.0, 0.0}, {1.0, 0.0, 0.0}},
-			{{1.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}},
-			{{-1.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 0.0}}};
-		const std::vector<unsigned int> PLANE_INDICES = {0, 1, 2, 2, 3, 0};
-		engine::MeshObject *meshObject =
-			new engine::MeshObject(PLANE_VERTICES, PLANE_INDICES);
-		meshObject->SetPosition({0, -22, 0});
-		meshObject->SetMeshSize({200, 1, 200});
-		meshObject->SetMeshColor({.2, .2, .2});
-		scene->AddObject(std::unique_ptr<engine::SceneObject>(meshObject));
-		// meshObject->SetTextures("assets/textures/stone_tile");
-		meshObject->SetTextures("assets/textures/brick");
-	}
 	// WATER
 	GLSLProgram waterDepthProgram;
 	waterDepthProgram.BuildFiles("assets/shaders/depth_pass.vert",
@@ -182,26 +236,10 @@ int main(int argc, char **argv) {
 	thicknessProgram.BuildFiles("assets/shaders/depth_pass.vert",
 								"assets/shaders/thickness.frag");
 	renderer.CreateProgram("thicknessMap", &thicknessProgram);
-	{
 
-		engine::FluidObject *object = new engine::FluidObject();
-		if (argc > 1)
-			object->fromFile(argv[1]);
-		else
-			object->fromFile("assets/caches/constantFlow4.abc");
-		object->SetPosition({0, -30, 0});
-		// object->SetSize({10, 10, 10});
-		object->SetSize({20, 20, 20});
-		scene->AddObject(std::unique_ptr<engine::SceneObject>(object));
-	}
-
-	{
-		engine::SkyboxObject *object = new engine::SkyboxObject();
-		scene->AddObject(std::unique_ptr<engine::SceneObject>(object));
-		scene->SetActiveSkybox(object);
-	}
-
-	//
+	auto programScenes = makeScenes();
+	unsigned int sceneIndex = 0;
+	engine::Scene *scene = programScenes.at(sceneIndex);
 
 	glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -223,8 +261,21 @@ int main(int argc, char **argv) {
 		cy::Vec3f cameraPos =
 			cy::Vec3f{radius * cos(phi) * sin(theta), radius * sin(phi),
 					  radius * cos(phi) * cos(theta)};
-		camera->SetPosition(cameraPos);
 
+		SceneObject *fluidObject = scene->GetObject("fluid");
+		if (fluidObject != nullptr) {
+			FluidObject *fluid = dynamic_cast<FluidObject *>(fluidObject);
+			if (fluid != nullptr && fluid->IsFinished()) {
+				if (sceneIndex + 1 > programScenes.size() - 1)
+					sceneIndex = -1;
+
+				fluid->Reset();
+				scene = programScenes.at(++sceneIndex);
+				std::cout << "moving onto scene: " << sceneIndex << std::endl;
+			}
+		}
+
+		scene->GetActiveCamera()->SetPosition(cameraPos);
 		scene->Update(dt);
 		scene->Render(renderer);
 
@@ -232,7 +283,6 @@ int main(int argc, char **argv) {
 		glfwPollEvents();
 	}
 
-	delete scene;
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
