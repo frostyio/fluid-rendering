@@ -1,4 +1,5 @@
 #include "common/typedefs.hpp"
+#include "components/fluid_simulation.hpp"
 #include "core/renderer.hpp"
 #include "core/scene.hpp"
 #include "core/scene_object.hpp"
@@ -6,7 +7,9 @@
 #include "objects/fluid.hpp"
 #include "objects/mesh.hpp"
 #include "objects/skybox.hpp"
+#include <future>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 #undef min
 #undef max
@@ -131,32 +134,35 @@ auto ObjectMakerFor(engine::Scene *scene) {
 	};
 }
 
-engine::Scene *sceneOne() {
+using CacheMap =
+	std::unordered_map<std::string,
+					   std::tuple<std::vector<Vec3f>, size_t, size_t>>;
+
+engine::Scene *sceneOne(const CacheMap &cache) {
 	engine::Scene *scene = makeDefaultScene();
-	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene1");
 
 	{
 
 		engine::FluidObject *object = new engine::FluidObject();
-		object->fromFile("assets/caches/prodScene1.abc");
+		object->fromFrameData(frameData, nPoints, nFrames);
 		object->SetPosition({0, -30, 0});
 		object->SetSize({20, 20, 20});
 		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
 	}
 
-	// MakeObject({0, 0, 2}, {5, 5, 1});
-
 	return scene;
 }
 
-engine::Scene *sceneTwo() {
+engine::Scene *sceneTwo(const CacheMap &cache) {
 	engine::Scene *scene = makeDefaultScene();
 	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene2");
 
 	{
 
 		engine::FluidObject *object = new engine::FluidObject();
-		object->fromFile("assets/caches/prodScene2.abc");
+		object->fromFrameData(frameData, nPoints, nFrames);
 		object->SetPosition({0, -30, 0});
 		object->SetSize({20, 20, 20});
 		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
@@ -167,14 +173,15 @@ engine::Scene *sceneTwo() {
 	return scene;
 }
 
-engine::Scene *sceneThree() {
+engine::Scene *sceneThree(const CacheMap &cache) {
 	engine::Scene *scene = makeDefaultScene();
 	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene3");
 
 	{
 
 		engine::FluidObject *object = new engine::FluidObject();
-		object->fromFile("assets/caches/liquid2.abc");
+		object->fromFrameData(frameData, nPoints, nFrames);
 		object->SetPosition({0, -30, 0});
 		object->SetSize({20, 20, 20});
 		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
@@ -184,8 +191,51 @@ engine::Scene *sceneThree() {
 }
 
 std::vector<engine::Scene *> makeScenes() {
-	std::vector<engine::Scene *> scenes = {sceneOne(), sceneTwo(),
-										   sceneThree()};
+
+	const std::unordered_map<std::string, std::string> usedCaches = {
+		{"scene1", "assets/caches/prodScene1.abc"},
+		{"scene2", "assets/caches/prodScene2.abc"},
+		{"scene3", "assets/caches/liquid2.abc"}};
+
+	CacheMap loadedCaches;
+
+	std::vector<std::future<
+		std::pair<std::string, std::tuple<std::vector<Vec3f>, size_t, size_t>>>>
+		futures;
+
+	for (const auto &entry : usedCaches) {
+		const std::string name = entry.first;
+		const std::string path = entry.second;
+
+		futures.emplace_back(std::async(
+			std::launch::async,
+			[name, path]()
+				-> std::pair<std::string,
+							 std::tuple<std::vector<Vec3f>, size_t, size_t>> {
+				size_t nPoints = 0, nFrames = 0;
+				auto frameData =
+					BakedPointDataComponent::createFrameDataFromPath(
+						path, nPoints, nFrames);
+				if (!frameData)
+					throw std::runtime_error("failed to load " + path);
+				return {name, {std::move(*frameData), nPoints, nFrames}};
+			}));
+	}
+
+	for (auto &f : futures) {
+		auto [name, data] = f.get();
+		loadedCaches.emplace(std::move(name), std::move(data));
+	}
+
+	std::cout << "loaded all!" << std::endl;
+
+	std::vector<std::function<engine::Scene *(const CacheMap &)>>
+		sceneGenerators = {sceneOne, sceneTwo, sceneThree};
+	std::vector<engine::Scene *> scenes;
+	for (auto &fn : sceneGenerators) {
+		engine::Scene *scene = fn(loadedCaches);
+		scenes.push_back(scene);
+	}
 	return scenes;
 }
 
