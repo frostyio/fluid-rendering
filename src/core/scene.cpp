@@ -11,6 +11,13 @@ void Scene::AddObject(std::unique_ptr<SceneObject> object) {
 	objects_.push_back(std::move(object));
 }
 
+void Scene::AddObject(const std::string &name,
+					  std::unique_ptr<SceneObject> object) {
+	SceneObject *raw = object.get();
+	objects_.push_back(std::move(object));
+	named_objects_[name] = raw;
+}
+
 void Scene::RemoveObject(SceneObject *object) {
 	objects_.erase(
 		std::remove_if(objects_.begin(), objects_.end(),

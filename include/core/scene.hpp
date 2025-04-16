@@ -3,6 +3,7 @@
 
 #include "core/renderer.hpp"
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 using namespace engine;
@@ -16,6 +17,7 @@ class SkyboxObject;
 class Scene {
   private:
 	std::vector<std::unique_ptr<SceneObject>> objects_;
+	std::unordered_map<std::string, SceneObject *> named_objects_;
 	CameraObject *activeCamera = nullptr;
 	SkyboxObject *activeSkybox = nullptr;
 
@@ -26,9 +28,18 @@ class Scene {
 	~Scene();
 
 	void AddObject(std::unique_ptr<SceneObject> object);
+	void AddObject(const std::string &name,
+				   std::unique_ptr<SceneObject> object);
 	void RemoveObject(SceneObject *object);
 	const std::vector<std::unique_ptr<SceneObject>> &GetObjects() const {
 		return objects_;
+	}
+	SceneObject *GetObject(const std::string &name) const {
+		auto it = named_objects_.find(name);
+		if (it != named_objects_.end()) {
+			return it->second;
+		}
+		return nullptr;
 	}
 
 	inline void SetActiveCamera(CameraObject *camera) { activeCamera = camera; }
