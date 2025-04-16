@@ -4,3 +4,4 @@ libs/*
 .cache
 assets/textures/stone_tile
 assets/caches/constant*.abc
+*.abc

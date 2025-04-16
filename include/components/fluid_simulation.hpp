@@ -49,6 +49,12 @@ class BakedPointDataComponent : public FluidData {
 	BakedPointDataComponent(const Alembic::Abc::IArchive &archive);
 	static std::optional<BakedPointDataComponent>
 	create(const std::string &path);
+	static std::vector<Vec3f>
+	createFrameData(const Alembic::Abc::IArchive &archive, size_t &numPoints,
+					size_t &numFrames);
+	static std::optional<std::vector<Vec3f>>
+	createFrameDataFromPath(const std::string &path, size_t &numPoints,
+							size_t &numFrames);
 
 	void Bind() override;
 	void Update(double dt) override;

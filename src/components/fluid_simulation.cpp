@@ -76,8 +76,7 @@ void findAndExtractPointsRecursive(const Alembic::Abc::IObject &obj,
 	}
 }
 
-std::optional<BakedPointDataComponent>
-BakedPointDataComponent::create(const std::string &path) {
+std::optional<IArchive> resolveAlembicPath(const std::string &path) {
 	IFactory factory;
 	IFactory::CoreType coreType;
 	IArchive archive = factory.getArchive(path, coreType);
@@ -88,11 +87,31 @@ BakedPointDataComponent::create(const std::string &path) {
 	}
 
 	std::cout << "opened Alembic file: " << path << std::endl;
-
-	return BakedPointDataComponent(archive);
+	return archive;
 }
 
-BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
+std::optional<BakedPointDataComponent>
+BakedPointDataComponent::create(const std::string &path) {
+	auto archiveOpt = resolveAlembicPath(path);
+	if (!archiveOpt.has_value())
+		return std::nullopt;
+
+	return BakedPointDataComponent(*archiveOpt);
+}
+
+std::optional<std::vector<Vec3f>>
+BakedPointDataComponent::createFrameDataFromPath(const std::string &path,
+												 size_t &numPoints,
+												 size_t &numFrames) {
+	auto archiveOpt = resolveAlembicPath(path);
+	if (!archiveOpt.has_value())
+		return std::nullopt;
+	return createFrameData(*archiveOpt, numPoints, numFrames);
+}
+
+std::vector<Vec3f>
+BakedPointDataComponent::createFrameData(const IArchive &archive,
+										 size_t &numPoints, size_t &numFrames) {
 	std::vector<std::vector<Vec3f>> allFrames;
 	findAndExtractPointsRecursive(archive.getTop(), allFrames);
 
@@ -107,7 +126,6 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 			  << std::endl;
 
 	std::vector<Vec3f> allFrameData;
-	currentFrame = 0;
 
 	numPoints = maxPoints;
 	numFrames = allFrames.size();
@@ -118,6 +136,13 @@ BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
 	}
 
 	std::cout << "made frame data!" << std::endl;
+
+	return allFrameData;
+}
+
+BakedPointDataComponent::BakedPointDataComponent(const IArchive &archive) {
+	std::vector<Vec3f> allFrameData =
+		createFrameData(archive, numPoints, numFrames);
 
 	// frame data
 	glGenVertexArrays(1, &vao);
