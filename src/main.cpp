@@ -26,6 +26,8 @@ static double accumulatedZoom = 70.;
 static int sceneIndex = 0;
 static engine::Scene *currentScene = nullptr;
 
+static bool paused = false;
+
 static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 						int mods) {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
@@ -46,6 +48,8 @@ static void keyCallback(GLFWwindow *window, int key, int scancode, int action,
 			sceneIndex++;
 		else if (key == GLFW_KEY_A)
 			sceneIndex--;
+		else if (key == GLFW_KEY_SPACE)
+			paused = !paused;
 	}
 }
 
@@ -142,14 +146,11 @@ engine::Scene *sceneOne(const CacheMap &cache) {
 	engine::Scene *scene = makeDefaultScene();
 	const auto &[frameData, nPoints, nFrames] = cache.at("scene1");
 
-	{
-
-		engine::FluidObject *object = new engine::FluidObject();
-		object->fromFrameData(frameData, nPoints, nFrames);
-		object->SetPosition({0, -30, 0});
-		object->SetSize({20, 20, 20});
-		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
-	}
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
 
 	return scene;
 }
@@ -159,14 +160,11 @@ engine::Scene *sceneTwo(const CacheMap &cache) {
 	auto MakeObject = ObjectMakerFor(scene);
 	const auto &[frameData, nPoints, nFrames] = cache.at("scene2");
 
-	{
-
-		engine::FluidObject *object = new engine::FluidObject();
-		object->fromFrameData(frameData, nPoints, nFrames);
-		object->SetPosition({0, -30, 0});
-		object->SetSize({20, 20, 20});
-		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
-	}
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
 
 	MakeObject({1, -0.5, 1}, {.97, .97, .97});
 
@@ -178,14 +176,85 @@ engine::Scene *sceneThree(const CacheMap &cache) {
 	auto MakeObject = ObjectMakerFor(scene);
 	const auto &[frameData, nPoints, nFrames] = cache.at("scene3");
 
-	{
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
 
-		engine::FluidObject *object = new engine::FluidObject();
-		object->fromFrameData(frameData, nPoints, nFrames);
-		object->SetPosition({0, -30, 0});
-		object->SetSize({20, 20, 20});
-		scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
-	}
+	MakeObject({1, -0.5, 1}, {.97, .97, .97});
+
+	return scene;
+}
+
+engine::Scene *sceneFour(const CacheMap &cache) {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene4");
+
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+
+	return scene;
+}
+
+engine::Scene *sceneFive(const CacheMap &cache) {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene5");
+
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+
+	return scene;
+}
+
+engine::Scene *sceneSix(const CacheMap &cache) {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene6");
+
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+
+	return scene;
+}
+
+engine::Scene *sceneSeven(const CacheMap &cache) {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene7");
+
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+
+	return scene;
+}
+
+engine::Scene *sceneEight(const CacheMap &cache) {
+	engine::Scene *scene = makeDefaultScene();
+	auto MakeObject = ObjectMakerFor(scene);
+	const auto &[frameData, nPoints, nFrames] = cache.at("scene8");
+
+	engine::FluidObject *object = new engine::FluidObject();
+	object->fromFrameData(frameData, nPoints, nFrames);
+	object->SetPosition({0, -30, 0});
+	object->SetSize({20, 20, 20});
+	scene->AddObject("fluid", std::unique_ptr<engine::SceneObject>(object));
+
+	MakeObject({1, -0.5, 0}, {.97, .97, .97});
 
 	return scene;
 }
@@ -194,8 +263,18 @@ std::vector<engine::Scene *> makeScenes() {
 
 	const std::unordered_map<std::string, std::string> usedCaches = {
 		{"scene1", "assets/caches/prodScene1.abc"},
-		{"scene2", "assets/caches/prodScene2.abc"},
-		{"scene3", "assets/caches/liquid2.abc"}};
+		{"scene2", "assets/caches/prodScene2-2.abc"},
+		{"scene3", "assets/caches/prodScene2-3.abc"},
+		{"scene4", "assets/caches/prodScene3.abc"},
+		{"scene5", "assets/caches/prodScene3-1.abc"},
+		{"scene6", "assets/caches/prodScene3-2.abc"},
+		{"scene7", "assets/caches/prodScene4-1.abc"},
+		{"scene8", "assets/caches/prodScene4-3.abc"},
+	};
+
+	const std::vector<std::function<engine::Scene *(const CacheMap &)>>
+		sceneGenerators = {sceneOne,  sceneTwo, sceneThree, sceneFour,
+						   sceneFive, sceneSix, sceneSeven, sceneEight};
 
 	CacheMap loadedCaches;
 
@@ -229,8 +308,6 @@ std::vector<engine::Scene *> makeScenes() {
 
 	std::cout << "loaded all!" << std::endl;
 
-	std::vector<std::function<engine::Scene *(const CacheMap &)>>
-		sceneGenerators = {sceneOne, sceneTwo, sceneThree};
 	std::vector<engine::Scene *> scenes;
 	for (auto &fn : sceneGenerators) {
 		engine::Scene *scene = fn(loadedCaches);
@@ -361,7 +438,8 @@ int main(int argc, char **argv) {
 		//
 
 		currentScene->GetActiveCamera()->SetPosition(cameraPos);
-		currentScene->Update(dt);
+		if (!paused)
+			currentScene->Update(dt);
 		currentScene->Render(renderer);
 
 		renderer.EndFrame(window);
