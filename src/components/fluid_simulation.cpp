@@ -247,8 +247,10 @@ void BakedPointDataComponent::Update(double dt) {
 	timer += dt;
 	if (timer >= (1. / 60.)) {
 		currentFrame++;
-		if (currentFrame >= numFrames)
+		if (currentFrame >= numFrames) {
 			currentFrame = 0;
+			loopCount++;
+		}
 		timer = 0;
 	}
 }
@@ -424,7 +426,12 @@ void BakedPointDataComponent::Draw(Renderer &renderer, Scene *scene,
 	}
 }
 
+bool BakedPointDataComponent::IsFinished() { return loopCount > 0; }
+void BakedPointDataComponent::Reset() { loopCount = 0; }
+
 void FluidSimulationComponent::Bind() {}
 void FluidSimulationComponent::Update(double) {}
 void FluidSimulationComponent::Draw(Renderer &renderer, Scene *scene,
 									Matrix4f model) {}
+bool FluidSimulationComponent::IsFinished() { return true; }
+void FluidSimulationComponent::Reset() {}

@@ -25,6 +25,8 @@ class FluidData : public Component, public IUpdatable {
 	virtual ~FluidData() = default;
 	virtual void Bind() = 0;
 	virtual void Draw(Renderer &renderer, Scene *scene, Matrix4f model) = 0;
+	virtual bool IsFinished() = 0;
+	virtual void Reset() = 0;
 };
 
 class BakedPointDataComponent : public FluidData {
@@ -38,6 +40,7 @@ class BakedPointDataComponent : public FluidData {
 
 	size_t currentFrame, numPoints, numFrames;
 	float timer = 0;
+	unsigned int loopCount = 0;
 
   public:
 	BakedPointDataComponent(const Alembic::Abc::IArchive &archive);
@@ -47,6 +50,8 @@ class BakedPointDataComponent : public FluidData {
 	void Bind() override;
 	void Update(double dt) override;
 	void Draw(Renderer &renderer, Scene *scene, Matrix4f model) override;
+	bool IsFinished() override;
+	void Reset() override;
 };
 
 class FluidSimulationComponent : public FluidData {
@@ -57,6 +62,8 @@ class FluidSimulationComponent : public FluidData {
 	void Bind() override;
 	void Update(double dt) override;
 	void Draw(Renderer &renderer, Scene *scene, Matrix4f model) override;
+	bool IsFinished() override;
+	void Reset() override;
 };
 
 } // namespace engine

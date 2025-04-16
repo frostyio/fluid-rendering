@@ -34,6 +34,9 @@ class FluidObject : public SceneObject {
 
 	bool fromFile(const std::string &path);
 	bool fromSimulation();
+
+	bool IsFinished() { return fluid->IsFinished(); }
+	void Reset() { fluid->Reset(); }
 };
 
 } // namespace engine
