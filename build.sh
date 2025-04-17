@@ -7,5 +7,5 @@ fi
 
 cd "$BUILD_DIR" || exit
 
-cmake.exe ..
+cmake.exe .. -DUSE_CUSTOM_LIB_GLEW=ON
 cmake.exe --build .

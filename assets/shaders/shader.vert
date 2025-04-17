@@ -7,6 +7,7 @@ layout(location = 2) in vec3 tex;
 out vec3 fragPos;
 out vec3 fragNorm;
 out vec3 texCoord;
+out vec2 uv;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -28,4 +29,6 @@ void main()
 
     // passing along
     texCoord = tex;
+
+    uv = vec2(0, 0);
 }

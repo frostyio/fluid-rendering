@@ -262,19 +262,28 @@ engine::Scene *sceneEight(const CacheMap &cache) {
 std::vector<engine::Scene *> makeScenes() {
 
 	const std::unordered_map<std::string, std::string> usedCaches = {
+		{"scene3", "assets/caches/prodScene2-3.abc"},
+		{"scene5", "assets/caches/prodScene3-1.abc"},
+		{"scene8", "assets/caches/prodScene4-3.abc"},
+#ifndef MINIMAL
+
 		{"scene1", "assets/caches/prodScene1.abc"},
 		{"scene2", "assets/caches/prodScene2-2.abc"},
-		{"scene3", "assets/caches/prodScene2-3.abc"},
 		{"scene4", "assets/caches/prodScene3.abc"},
-		{"scene5", "assets/caches/prodScene3-1.abc"},
 		{"scene6", "assets/caches/prodScene3-2.abc"},
 		{"scene7", "assets/caches/prodScene4-1.abc"},
-		{"scene8", "assets/caches/prodScene4-3.abc"},
+#endif
+
 	};
 
 	const std::vector<std::function<engine::Scene *(const CacheMap &)>>
-		sceneGenerators = {sceneOne,  sceneTwo, sceneThree, sceneFour,
-						   sceneFive, sceneSix, sceneSeven, sceneEight};
+		sceneGenerators = {
+			sceneThree, sceneFive, sceneEight,
+#ifndef MINIMAL
+			sceneOne,	sceneTwo,  sceneFour,  sceneSix, sceneSeven,
+#endif
+
+		};
 
 	CacheMap loadedCaches;
 

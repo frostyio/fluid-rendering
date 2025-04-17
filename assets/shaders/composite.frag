@@ -2,6 +2,7 @@
 
 in vec2 uv;
 out vec4 fragColor;
+in vec3 fragPos;
 
 uniform sampler2D uScene;
 uniform sampler2D uTrans;

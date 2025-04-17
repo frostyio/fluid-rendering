@@ -12,6 +12,8 @@ set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON) # for editor
 
+option(MINIMAL "Enable minimal build mode" ON)
+
 include_directories(${INCLUDE_DIR})
 
 file(GLOB_RECURSE SOURCES "${SRC_DIR}/*.cpp")
@@ -26,6 +28,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE PROJECT_NAME="${PROJECT_NAME}")
+if(APPLE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE CY_NO_INTRIN_H INVERT_PROJ)
+endif()
+if(MINIMAL)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE MINIMAL)
+endif()
 
 # glfw
 target_link_libraries(${PROJECT_NAME} PUBLIC glfw)
@@ -34,18 +42,28 @@ add_subdirectory(libs/glfw)
 
 # opengl
 find_package(OpenGL REQUIRED)
-target_link_libraries(${PROJECT_NAME} PUBLIC opengl32) # assumes opengl32 can be found on your system
+target_link_libraries(${PROJECT_NAME} PUBLIC OpenGL::GL) # assumes opengl32 can be found on your system
 
 # glew
-set(GLEW_DIR "${LIB_DIR}/glew-2.1.0")
-target_link_libraries(${PROJECT_NAME} PUBLIC ${GLEW_DIR}/lib/Release/x64/glew32.lib)
-target_include_directories(${PROJECT_NAME} PUBLIC ${GLEW_DIR}/include)
-add_custom_command(
-				TARGET ${PROJECT_NAME} POST_BUILD
-				COMMAND ${CMAKE_COMMAND} -E copy
-												${GLEW_DIR}/bin/Release/x64/glew32.dll
-												$<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
+option(USE_CUSTOM_LIB_GLEW "custom use glew" OFF)
+
+if(USE_CUSTOM_LIB_GLEW)
+    set(GLEW_DIR "${LIB_DIR}/glew-2.1.0")
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${GLEW_DIR}/lib/Release/x64/glew32.lib)
+    target_include_directories(${PROJECT_NAME} PUBLIC ${GLEW_DIR}/include)
+    add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+                ${GLEW_DIR}/bin/Release/x64/glew32.dll
+                $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    )
+    message(STATUS "USE_CUSTOM_LIB_GLEW is: '${USE_CUSTOM_LIB_GLEW}'")
+
+else()
+    find_package(GLEW REQUIRED)
+    target_link_libraries(${PROJECT_NAME} PUBLIC GLEW::GLEW)
+endif()
+
 
 # cyCodeBase
 set(CYCODEBASE_DIR "${LIB_DIR}/cyCodeBase" CACHE PATH "Path to cyCodeBase")
