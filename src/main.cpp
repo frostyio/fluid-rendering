@@ -344,8 +344,10 @@ int main(int argc, char **argv) {
 	// callbacks
 	glfwSetKeyCallback(window, keyCallback);
 	glfwSetMouseButtonCallback(window, mouseCallback);
+#if !defined(__APPLE__)
 	CY_GL_REGISTER_DEBUG_CALLBACK;
 	SETUP_DEBUG_CALLBACKS;
+#endif
 
 	// opengl
 	int width, height;
