@@ -1,4 +1,4 @@
-# An implementation of [A narrow range filter for screen space fluid dynamics](https://dl.acm.org/doi/10.1145/3203201)
+# An Implementation of [A Narrow Range Filter for Screen Space Fluid Rendering](https://dl.acm.org/doi/10.1145/3203201)
 
 <img src="images/img1.png" height="200"/> <img src="images/img2.png" height="200"/>
 
