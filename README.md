@@ -1,5 +1,7 @@
 # An implementation of [A narrow range filter for screen space fluid dynamics](https://dl.acm.org/doi/10.1145/3203201)
 
+<img src="images/img1.png" height="200"/> <img src="images/img2.png" height="200"/>
+
 ## Information
 
 Loads a fluid simulation through `.abc` (alembic) files.
